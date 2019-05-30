@@ -1,10 +1,16 @@
 "use strict";
 
-const chalk 							= require("chalk");
-const _ 								= require("lodash");
-const { table, getBorderCharacters } 	= require("table");
+const chalk = require("chalk");
+const _ = require("lodash");
+const { table, getBorderCharacters } = require("table");
+const beautify = require("js-beautify").js;
 
-const { match, CIRCUIT_CLOSE, CIRCUIT_HALF_OPEN, CIRCUIT_OPEN } = require("../utils");
+const {
+	match,
+	CIRCUIT_CLOSE,
+	CIRCUIT_HALF_OPEN,
+	CIRCUIT_OPEN
+} = require("../utils");
 
 module.exports = function(vorpal, broker) {
 	// List actions
@@ -16,7 +22,12 @@ module.exports = function(vorpal, broker) {
 		.option("-i, --skipinternal", "skip internal actions")
 		.option("-l, --local", "only local actions")
 		.action((args, done) => {
-			const actions = broker.registry.getActionList({ onlyLocal: args.options.local, onlyAvailable: !args.options.all, skipInternal: args.options.skipinternal, withEndpoints: args.options.details });
+			const actions = broker.registry.getActionList({
+				onlyLocal: args.options.local,
+				onlyAvailable: !args.options.all,
+				skipInternal: args.options.skipinternal,
+				withEndpoints: args.options.details
+			});
 
 			const data = [
 				[
@@ -34,12 +45,44 @@ module.exports = function(vorpal, broker) {
 
 			let lastServiceName;
 
+			let formatParams = params => {
+				if (!params.name) {
+					return Object.keys(params).join(", ");
+				}
+				const preparedParams =
+					params.name &&
+					params.name.replace(/\{\|/gi, "{").replace(/\|\}/gi, "}");
+				return beautify(preparedParams, {
+					indent_size: "4",
+					indent_char: " ",
+					max_preserve_newlines: "1",
+					preserve_newlines: true,
+					keep_array_indentation: false,
+					break_chained_methods: false,
+					indent_scripts: "keep",
+					brace_style: "end-expand",
+					space_before_conditional: false,
+					unescape_strings: false,
+					jslint_happy: false,
+					end_with_newline: false,
+					wrap_line_length: "70",
+					indent_inner_html: false,
+					comma_first: false,
+					e4x: false,
+					indent_empty_lines: false
+				});
+			};
+
 			actions.forEach(item => {
 				const action = item.action;
 				const state = item.available;
-				const params = action && action.params ? Object.keys(action.params).join(", ") : "";
+				const params =
+					action && action.params ? formatParams(action.params) : "";
 
-				if (args.options.filter && !match(item.name, args.options.filter))
+				if (
+					args.options.filter &&
+					!match(item.name, args.options.filter)
+				)
 					return;
 
 				const serviceName = item.name.split(".")[0];
@@ -53,8 +96,10 @@ module.exports = function(vorpal, broker) {
 					data.push([
 						action.name,
 						(item.hasLocal ? "(*) " : "") + item.count,
-						state ? chalk.bgGreen.white("   OK   "):chalk.bgRed.white.bold(" FAILED "),
-						action.cache ? chalk.green("Yes"):chalk.gray("No"),
+						state
+							? chalk.bgGreen.white("   OK   ")
+							: chalk.bgRed.white.bold(" FAILED "),
+						action.cache ? chalk.green("Yes") : chalk.gray("No"),
 						params
 					]);
 				} else {
@@ -67,13 +112,16 @@ module.exports = function(vorpal, broker) {
 					]);
 				}
 
-				let getStateLabel = (state) => {
-					switch(state) {
-					case true:
-					case CIRCUIT_CLOSE:			return chalk.bgGreen.white( "   OK   ");
-					case CIRCUIT_HALF_OPEN: 	return chalk.bgYellow.black(" TRYING ");
-					case false:
-					case CIRCUIT_OPEN: 			return chalk.bgRed.white(	" FAILED ");
+				let getStateLabel = state => {
+					switch (state) {
+						case true:
+						case CIRCUIT_CLOSE:
+							return chalk.bgGreen.white("   OK   ");
+						case CIRCUIT_HALF_OPEN:
+							return chalk.bgYellow.black(" TRYING ");
+						case false:
+						case CIRCUIT_OPEN:
+							return chalk.bgRed.white(" FAILED ");
 					}
 				};
 
@@ -81,7 +129,9 @@ module.exports = function(vorpal, broker) {
 					item.endpoints.forEach(endpoint => {
 						data.push([
 							"",
-							endpoint.nodeID == broker.nodeID ? chalk.gray("<local>") : endpoint.nodeID,
+							endpoint.nodeID == broker.nodeID
+								? chalk.gray("<local>")
+								: endpoint.nodeID,
 							getStateLabel(endpoint.state),
 							"",
 							""
@@ -92,13 +142,19 @@ module.exports = function(vorpal, broker) {
 			});
 
 			const tableConf = {
-				border: _.mapValues(getBorderCharacters("honeywell"), char => chalk.gray(char)),
+				border: _.mapValues(getBorderCharacters("honeywell"), char =>
+					chalk.gray(char)
+				),
 				columns: {
 					1: { alignment: "right" },
 					3: { alignment: "center" },
-					5: { width: 20, wrapWord: true }
+					5: { width: 50, wrapWord: true }
 				},
-				drawHorizontalLine: (index, count) => index == 0 || index == 1 || index == count || hLines.indexOf(index) !== -1
+				drawHorizontalLine: (index, count) =>
+					index == 0 ||
+					index == 1 ||
+					index == count ||
+					hLines.indexOf(index) !== -1
 			};
 
 			console.log(table(data, tableConf));
