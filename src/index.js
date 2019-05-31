@@ -42,6 +42,23 @@ function REPL(broker, opts) {
 	}); //vorpal exit event (Ctrl-C)
 
 	vorpal.history("default");
+	vorpal.ui.on("vorpal_ui_keypress", function(data) {
+		switch (data.key) {
+			case "up":
+				if (
+					this._lastCmd &&
+					vorpal.cmdHistory._histCtr === 1 &&
+					vorpal.cmdHistory._hist[
+						vorpal.cmdHistory._hist.length - 1
+					] !== this._lastCmd
+				) {
+					vorpal.cmdHistory._hist.push(this._lastCmd);
+					vorpal.cmdHistory._histCtr++;
+				}
+			default:
+				this._lastCmd = data.value;
+		}
+	});
 
 	vorpal
 		.command("q", "Exit application")
