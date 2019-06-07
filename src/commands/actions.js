@@ -12,7 +12,7 @@ const {
 	CIRCUIT_OPEN
 } = require("../utils");
 
-module.exports = function(vorpal, broker) {
+module.exports = function (vorpal, broker) {
 	// List actions
 	vorpal
 		.command("actions", "List of actions")
@@ -32,10 +32,8 @@ module.exports = function(vorpal, broker) {
 			const data = [
 				[
 					chalk.bold("Action"),
-					chalk.bold("Nodes"),
-					chalk.bold("State"),
-					chalk.bold("Cached"),
-					chalk.bold("Params")
+					chalk.bold("Params"),
+					chalk.bold("Response")
 				]
 			];
 
@@ -95,19 +93,12 @@ module.exports = function(vorpal, broker) {
 				if (action) {
 					data.push([
 						action.name,
-						(item.hasLocal ? "(*) " : "") + item.count,
-						state
-							? chalk.bgGreen.white("   OK   ")
-							: chalk.bgRed.white.bold(" FAILED "),
-						action.cache ? chalk.green("Yes") : chalk.gray("No"),
-						params
+						params,
+						action.response,
 					]);
 				} else {
 					data.push([
 						item.name,
-						item.count,
-						chalk.bgRed.white.bold(" FAILED "),
-						"",
 						""
 					]);
 				}
@@ -129,11 +120,6 @@ module.exports = function(vorpal, broker) {
 					item.endpoints.forEach(endpoint => {
 						data.push([
 							"",
-							endpoint.nodeID == broker.nodeID
-								? chalk.gray("<local>")
-								: endpoint.nodeID,
-							getStateLabel(endpoint.state),
-							"",
 							""
 						]);
 					});
@@ -146,9 +132,8 @@ module.exports = function(vorpal, broker) {
 					chalk.gray(char)
 				),
 				columns: {
-					1: { alignment: "right" },
-					3: { alignment: "center" },
-					5: { width: 50, wrapWord: true }
+					2: { width: 50, wrapWord: true },
+					3: { width: 50, wrapWord: true },
 				},
 				drawHorizontalLine: (index, count) =>
 					index == 0 ||
