@@ -12,7 +12,7 @@ const {
 	CIRCUIT_OPEN
 } = require("../utils");
 
-module.exports = function (vorpal, broker) {
+module.exports = function(vorpal, broker) {
 	// List actions
 	vorpal
 		.command("actions", "List of actions")
@@ -33,7 +33,8 @@ module.exports = function (vorpal, broker) {
 				[
 					chalk.bold("Action"),
 					chalk.bold("Params"),
-					chalk.bold("Response")
+					chalk.bold("Response"),
+					chalk.bold("Auth / Permissions")
 				]
 			];
 
@@ -71,9 +72,17 @@ module.exports = function (vorpal, broker) {
 				});
 			};
 
+			let getPermissions = action => {
+				if (action.permissions && action.permissions.length) {
+					return chalk.green(`[${action.permissions.join(", ")}]`);
+				} else if (action.authRequired) {
+					return chalk.green("REQUIRED");
+				}
+				return chalk.red("NOT REQUIRED");
+			};
+
 			actions.forEach(item => {
 				const action = item.action;
-				const state = item.available;
 				const params =
 					action && action.params ? formatParams(action.params) : "";
 
@@ -95,12 +104,10 @@ module.exports = function (vorpal, broker) {
 						action.name,
 						params,
 						action.response,
+						getPermissions(action)
 					]);
 				} else {
-					data.push([
-						item.name,
-						""
-					]);
+					data.push([item.name, ""]);
 				}
 
 				let getStateLabel = state => {
@@ -118,10 +125,7 @@ module.exports = function (vorpal, broker) {
 
 				if (args.options.details && item.endpoints) {
 					item.endpoints.forEach(endpoint => {
-						data.push([
-							"",
-							""
-						]);
+						data.push(["", ""]);
 					});
 					hLines.push(data.length);
 				}
@@ -133,7 +137,7 @@ module.exports = function (vorpal, broker) {
 				),
 				columns: {
 					2: { width: 50, wrapWord: true },
-					3: { width: 50, wrapWord: true },
+					3: { width: 50, wrapWord: true }
 				},
 				drawHorizontalLine: (index, count) =>
 					index == 0 ||
