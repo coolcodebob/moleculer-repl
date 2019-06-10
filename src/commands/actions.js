@@ -64,7 +64,7 @@ module.exports = function(vorpal, broker) {
 					unescape_strings: false,
 					jslint_happy: false,
 					end_with_newline: false,
-					wrap_line_length: "70",
+					wrap_line_length: "50",
 					indent_inner_html: false,
 					comma_first: false,
 					e4x: false,
@@ -136,8 +136,8 @@ module.exports = function(vorpal, broker) {
 					chalk.gray(char)
 				),
 				columns: {
-					2: { width: 50, wrapWord: true },
-					3: { width: 50, wrapWord: true }
+					2: { width: 30, wrapWord: true },
+					3: { width: 20, wrapWord: true }
 				},
 				drawHorizontalLine: (index, count) =>
 					index == 0 ||
